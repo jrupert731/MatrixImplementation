@@ -1,0 +1,9 @@
+*
+/**/
+!.gitignore
+!*.cpp
+!*.hh
+!Makefile
+!*.tex
+!*.pdf
+!*.py
