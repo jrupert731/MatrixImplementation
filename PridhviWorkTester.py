@@ -6,6 +6,8 @@ def generate_coeffs_answer_n(n = 0):
 	sol =  []
 	for i in range(n):
 		sol.append(random.randrange(-100,100))
+#		if i == 0:
+#			sol[0] = 0
 		print(sol[-1])
 	c = []
 	a = []
@@ -13,6 +15,8 @@ def generate_coeffs_answer_n(n = 0):
 		coeffs = []
 		for j in range(n):
 			coeffs.append(random.randrange(-10,10))
+#			if i == 0 and j ==  0:
+#				coeffs[0] = 0
 		answer = 0
 		for j in range(n):
 			answer += coeffs[j]*sol[j]
@@ -38,6 +42,6 @@ def write_trial(c,a,n, dest = None):
 			for i in lines:
 				f.write(str(i) + "\n")
 def main():
-	c,a,n = generate_coeffs_answer_n(2)
+	c,a,n = generate_coeffs_answer_n(4)
 	write_trial(c,a,n,"data.dat")
 main()
