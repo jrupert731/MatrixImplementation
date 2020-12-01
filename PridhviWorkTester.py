@@ -55,7 +55,9 @@ def write_trial(c, a, n, sol=None,dest=None):
 #     c, a, n, sol = generate_coeffs_answer_n(n)
 #     write_trial(c, a, n, "data.dat")
 #     return sol
+fail_counter = 0
 async def run_trial(n=4):
+    global fail_counter
     c, a, n, sol = generate_coeffs_answer_n(n)
     # coeffs = str(n) + "\n"
     # coeffs = ["a.out <",coeffs]
@@ -83,9 +85,11 @@ async def run_trial(n=4):
         output = output.decode("utf-8")
         output = output.strip()
         if(output!= str(sol[i])):
+            fail_counter +=1
             # print(": " + str(a[i]))
-            logger.error("Failed trial, wrote to disk")
+            logger.error(f"Failed trial, wrote to disk.  {fail_counter} trials failed so far")
             write_trial(c,a,n,sol,"data.dat")
+            return
     # logger.success("Finished Trial")
     
 
@@ -109,8 +113,8 @@ def run_trial_to_disk_if_fail(n=4):
         print(" ".join(sol))
 
 async def main():
-    for i in tqdm(range(1000)):
-        await run_trial(4)
+    for i in tqdm(range(10000)):
+        await run_trial(50)
 loop = asyncio.get_event_loop()
 loop.run_until_complete(main())
 loop.close()

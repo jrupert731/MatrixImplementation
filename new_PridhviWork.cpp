@@ -1,5 +1,5 @@
 #define infile "data.dat"
-#define debugging 1
+#define debugging 0
 #define read_from_cin 0
 #define minimum_precision 1e-12
 #include <memory.h>
@@ -9,9 +9,11 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <random>
 using std::cout;
 using std::endl;
 using std::ifstream;
+using std::rand;
 
 void print_matrix(double* matrix, int n) {
   int counter = 0;
@@ -108,8 +110,8 @@ bool row_is_zeros(const double* row, const int& n) {
 int get_index(const int n, const int i, const int j) { return i * n + j; }
 void get_nonzero_pivot(int& n, double*& m, double*& v, int& i) {
   int j = i + 1;
-  while ((m[get_index(n, j, i)] == 0) && j < n) j++;
-  j--;
+  while ((fabs(m[get_index(n, j, i)]) < minimum_precision) && j < n) j++;
+  if (j >= n) j--;
   double scratch_space[n * n];
   double ans;
   memcpy(scratch_space, m + i * n, sizeof(double) * n);
@@ -147,7 +149,7 @@ void partial_pivot(int& n, double*& m, double*& v, int i) {
   }
 }
 
-void convert_row_echelon_form(int& n, double*& m, double*& v) {
+bool convert_row_echelon_form(int& n, double*& m, double*& v) {
   for (int i = 0; i < n; i++) {
     // iterate through the pivots
     partial_pivot(n, m, v, i);
@@ -159,6 +161,7 @@ void convert_row_echelon_form(int& n, double*& m, double*& v) {
       // cout << "unsolvable" << endl;
       // return;
       // pivot = m[index_of_pivot];
+      return false;
     }
     for (int j = i + 1; j < n; j++) {
       // iterate through the rows underneath each pivot
@@ -223,6 +226,7 @@ void convert_row_echelon_form(int& n, double*& m, double*& v) {
     }
   }
   delete[] scratch_space;
+  return true;
 }
 void reduce_row_echelon_form(int& n, double*& m, double*& v) {
   // assume input is in row_echelon_form.;
@@ -238,12 +242,46 @@ void reduce_row_echelon_form(int& n, double*& m, double*& v) {
     }
   }
 }
+
+void shuffle(double* m, double* v, int n) {
+  double mc[n];
+  int index_replaced = rand() % (n - 1) + 1;
+  memcpy(mc, m + index_replaced, n * sizeof(double));
+  memcpy(m + index_replaced, m, n * sizeof(double));
+  memcpy(m, mc, n * sizeof(double));
+  double t = v[index_replaced];
+  v[index_replaced] = v[0];
+  v[0] = t;
+}
 int main() {
   int n;
   double* matrix = nullptr;
   double* answer_vector = nullptr;
   get_input(n, matrix, answer_vector);
   if (run_checks(n, matrix, answer_vector)) {
+    // bool result = false;
+    // double* matrix_copy = new double[n * n];
+    // double* answer_vector_copy = new double[n];
+    // bool first = false;
+    // memcpy(answer_vector_copy, answer_vector, n * sizeof(double));
+    // memcpy(matrix_copy, matrix, n * n * sizeof(double));
+    // while (!result) {
+    //   if (!first) {
+    //     for (int i = 0; i < n * n; i++) shuffle(matrix, answer_vector, n);
+    //     memcpy(answer_vector_copy, answer_vector, n * sizeof(double));
+    //     memcpy(matrix_copy, matrix, n * n * sizeof(double));
+    //     first = true;
+    //   }
+    //   result = convert_row_echelon_form(n, matrix_copy, answer_vector_copy);
+    //   if (!result) {
+    //     shuffle(matrix, answer_vector, n);
+    //     memcpy(answer_vector_copy, answer_vector, n * sizeof(double));
+    //     memcpy(matrix_copy, matrix, n * n * sizeof(double));
+    //   } else {
+    //     memcpy(answer_vector, answer_vector_copy, n * sizeof(double));
+    //     memcpy(matrix, matrix_copy, n * n * sizeof(double));
+    //   }
+    // }
     convert_row_echelon_form(n, matrix, answer_vector);
     if (debugging) print_both(matrix, answer_vector, n);
     reduce_row_echelon_form(n, matrix, answer_vector);
