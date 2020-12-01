@@ -45,3 +45,26 @@ void GramSchmidt(double* &matrix, int n) {
     }
     normalizeVectors(matrix, n);
 }
+
+void printMatrix(double* &matrix, int n) {
+    int counter = 0;
+    for (int i = 0; i < (sizeof(matrix) / sizeof(double)); i += n) {
+        for (int j = i; j < n + i; j++, counter++) {
+            cout << matrix[counter];
+            if (j == (n + i - 1))
+                cout << endl;
+            else
+                cout << "/t";
+        }
+    }
+}
+
+int main() {
+    double* matrix;
+    for (int i = 0; i < 9; i++) {
+        matrix[i] = 2*(double)i - 1;
+    }
+    GramSchmidt(matrix, 3);
+    printMatrix(matrix, 3);
+}
+

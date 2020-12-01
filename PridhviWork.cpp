@@ -2,13 +2,131 @@
 #define debugging 0
 #include <memory.h>
 #include <string.h>
-
+#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <memory>
 using std::cout;
+using std::ostream;
 using std::endl;
 using std::ifstream;
+using std::swap;
+
+class Matrix {
+private:
+	int n;
+	double *data;
+
+
+public:
+	//constructor
+	Matrix() {
+		int i = 0;
+		ifstream file;
+		file.open("data.dat");
+		file >> n;
+
+		double a = 0;
+		data = new double[n*n];
+		while (file >> a) {
+			data[i] = a;
+			i++;
+		}
+		file.close();
+	}
+
+	//constructor for 0 matrix
+	Matrix(int n) {
+		this->n = n;
+		data = new double[n*n];
+		for (int i = 0; i < n*n; i++) {
+			data[i] = 0;
+		}
+	}
+	
+	//destructor
+	~Matrix() {
+		delete[] data;
+	}
+
+	//copy constructor
+	Matrix(Matrix &orig) {
+		n = orig.n;
+		data = new double[n];
+		for (int i = 0; i < n*n; i++) {
+			data[i] = orig.data[i];
+		}
+	}
+
+	//move constructor
+	Matrix(Matrix &&orig) {
+		n = orig.n;
+		data = orig.data;
+		orig.data = nullptr;
+	}
+
+	//operator =
+	Matrix operator=(Matrix &orig) {
+		Matrix copy = orig;
+		swap(n, copy.n);
+		swap(data, copy.data);
+		return *this;
+	}
+
+
+	Matrix sqr() const {
+		Matrix sqr(n);
+
+		for (int i = 0; i < n; i++) {
+			for (int j = 0; j < n; j++) {
+				for (int k = 0; k < n; k++) {
+					sqr.data[n * j + i] += data[k * n + i] * data[j * n + k];
+					//cout << data[k * n + i] << " x " << data[j * n + k] << " = " << sqr[n * j + i] << endl;
+				}
+				//cout << endl;
+			}
+		}
+		return sqr;
+	}
+
+
+
+	Matrix cube() const {
+		Matrix sqr(n);
+
+		for (int i = 0; i < n; i++) {
+			for (int j = 0; j < n; j++) {
+				for (int k = 0; k < n; k++) {
+					sqr.data[n * j + i] += data[k * n + i] * data[j * n + k];
+				}
+			}
+		}
+
+
+		Matrix cube(n);
+
+		for (int i = 0; i < n; i++) {
+			for (int j = 0; j < n; j++) {
+				for (int k = 0; k < n; k++) {
+					cube.data[n * j + i] += sqr.data[k * n + i] * data[j * n + k];
+					//cout << sqr[k * n + i] << " x " << data[j * n + k] << " = " << cube[n * j + i] << endl;
+				}
+				//cout << endl;
+			}
+		}
+		return cube;
+	}
+
+	friend ostream &operator <<(ostream &os, const Matrix &mat) {
+		for (int i = 0; i < mat.n; i++){
+			for (int j = 0; j < mat.n; j++) {
+				os << mat.data[i * mat.n + j] << " ";
+			}
+			os << endl;
+		}
+		return os;
+	}
+};
 
 void print_matrix(double *matrix, int n) {
   int counter = 0;
@@ -90,6 +208,7 @@ void get_nonzero_pivot(int &n, double *&m, double *&v, int &i) {
   v[j] = ans;
   delete[] scratch_space;
 }
+
 void convert_row_echelon_form(int &n, double *&m, double *&v) {
   for (int i = 0; i < n; i++) {
     // iterate through the pivots
@@ -187,6 +306,7 @@ void convert_row_echelon_form(int &n, double *&m, double *&v) {
   }
   // #endif
 }
+
 void reduce_row_echelon_form(int &n, double *&m, double *&v) {
   // assume input is in row_echelon_form.
   int num_vars_solved = 0;
@@ -219,11 +339,56 @@ void reduce_row_echelon_form(int &n, double *&m, double *&v) {
     if (v[i] > -1e-14 && v[i] < 1e-14) v[i] = 0;
   }
 }
+
+void normalizeVectors(double* &matrix, int n) {
+    int counter = 0;
+    double* magnitudes;
+    for (int i = 0; i < (sizeof(matrix) / sizeof(double)); i += n) {
+        for (int j = i; j < n + i; j++, counter++) {
+            magnitudes[i / n] += (matrix[counter] * matrix[counter]);
+        }
+        magnitudes[i / n] = sqrt(magnitudes[i / n]);
+    }
+    for (int i = 0; i < (sizeof(matrix) / sizeof(double)); i += n) {
+        for (int j = i; j < n + i; j++, counter++) {
+            matrix[counter] /= magnitudes[i / n];
+        }
+    }
+    delete[] magnitudes;
+}
+double dotProduct(double* &matrix, int n, int v1, int v2) {
+    double total = 0;
+    for (int i = (v1*n); i < ((v1+1)*n); i++) {
+        total += (matrix[i]*matrix[i+((v2-v1)*n)]);
+    }
+    return total;
+}
+
+void GramSchmidt(double* &matrix, int n) {
+    int counter = 0;
+    normalizeVectors(matrix, n);
+    for (int i = 0; i < (sizeof(matrix) / sizeof(double)); i+=n) {
+        for (int j = i; j < n + i; j++, counter++) {
+            for (int k = 0; k < i; k++) {
+                matrix[counter] -= dotProduct(matrix, n, i, k);
+            }
+        }
+    }
+    normalizeVectors(matrix, n);
+}
+
 int main() {
   int n;
   double *matrix = nullptr;
   double *answer_vector = nullptr;
   get_input(n, matrix, answer_vector);
+  double* matrix2 = matrix;
+  Matrix A = Matrix();
+	Matrix B = A.sqr();
+	Matrix C = A.cube();
+	cout << A << endl;
+	cout << B << endl;
+	cout << C << endl;
   if (run_checks(n, matrix, answer_vector)) {
     convert_row_echelon_form(n, matrix, answer_vector);
     if (debugging) print_both(matrix, answer_vector, n);
@@ -234,6 +399,12 @@ int main() {
   } else {
     cout << "Invald data found, quitting." << endl;
   }
+  for (int i = 0; i < 9; i++) {
+        matrix[i] = 2*(double)i - 1;
+    }
+  GramSchmidt(matrix2, 3);
+  print_matrix(matrix2, 3);
   delete[] matrix;
+  delete[] matrix2;
   delete[] answer_vector;
 }
