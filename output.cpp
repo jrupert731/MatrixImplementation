@@ -1,5 +1,206 @@
 #define infile "data.dat"
-#define debugging 1
+#include <memory.h>
+#include <string.h>
+
+#include <cmath>
+#include <fstream>
+#include <iostream>
+#include <memory>
+using std::cout;
+using std::endl;
+using std::ifstream;
+
+void normalizeVectors(double*& matrix, int n) {
+  int counter = 0;
+  double* magnitudes;
+  for (int i = 0; i < (sizeof(matrix) / sizeof(double)); i += n) {
+    for (int j = i; j < n + i; j++, counter++) {
+      magnitudes[i / n] += (matrix[counter] * matrix[counter]);
+    }
+    magnitudes[i / n] = sqrt(magnitudes[i / n]);
+  }
+  for (int i = 0; i < (sizeof(matrix) / sizeof(double)); i += n) {
+    for (int j = i; j < n + i; j++, counter++) {
+      matrix[counter] /= magnitudes[i / n];
+    }
+  }
+  delete[] magnitudes;
+}
+double dotProduct(double*& matrix, int n, int v1, int v2) {
+  double total = 0;
+  for (int i = (v1 * n); i < ((v1 + 1) * n); i++) {
+    total += (matrix[i] * matrix[i + ((v2 - v1) * n)]);
+  }
+  return total;
+}
+
+void GramSchmidt(double*& matrix, int n) {
+  int counter = 0;
+  normalizeVectors(matrix, n);
+  for (int i = 0; i < (sizeof(matrix) / sizeof(double)); i += n) {
+    for (int j = i; j < n + i; j++, counter++) {
+      for (int k = 0; k < i; k++) {
+        matrix[counter] -= dotProduct(matrix, n, i, k);
+      }
+    }
+  }
+  normalizeVectors(matrix, n);
+}
+
+void printMatrix(double*& matrix, int n) {
+  int counter = 0;
+  for (int i = 0; i < (sizeof(matrix) / sizeof(double)); i += n) {
+    for (int j = i; j < n + i; j++, counter++) {
+      cout << matrix[counter];
+      if (j == (n + i - 1))
+        cout << endl;
+      else
+        cout << "/t";
+    }
+  }
+}
+
+int main1(double* matrix, double* answer_vector, int n) {
+  // double* matrix;
+  for (int i = 0; i < n * n; i++) {
+    matrix[i] = 2 * (double)i - 1;
+  }
+  GramSchmidt(matrix, n);
+  printMatrix(matrix, n);
+  return 0;
+}
+
+#include <fstream>
+#include <iostream>
+
+using namespace std;
+
+class matrix {
+ private:
+  int n;
+  double* data;
+
+ public:
+  // constructor
+  matrix() {
+    int i = 0;
+    ifstream file;
+    file.open("data.dat");
+    file >> n;
+
+    double a = 0;
+    data = new double[n * n];
+    int counter = 0;
+    while (file >> a && counter < n * n) {
+      data[i] = a;
+      i++;
+      counter++;
+    }
+    file.close();
+  }
+
+  // constructor for 0 matrix
+  matrix(int n) {
+    this->n = n;
+    data = new double[n * n];
+    for (int i = 0; i < n * n; i++) {
+      data[i] = 0;
+    }
+  }
+
+  // destructor
+  ~matrix() { delete[] data; }
+
+  // copy constructor
+  matrix(matrix& orig) {
+    n = orig.n;
+    data = new double[n];
+    for (int i = 0; i < n * n; i++) {
+      data[i] = orig.data[i];
+    }
+  }
+
+  // move constructor
+  matrix(matrix&& orig) {
+    n = orig.n;
+    data = orig.data;
+    orig.data = nullptr;
+  }
+
+  // operator =
+  matrix operator=(matrix& orig) {
+    matrix copy = orig;
+    swap(n, copy.n);
+    swap(data, copy.data);
+    return *this;
+  }
+
+  matrix sqr() const {
+    matrix sqr(n);
+
+    for (int i = 0; i < n; i++) {
+      for (int j = 0; j < n; j++) {
+        for (int k = 0; k < n; k++) {
+          sqr.data[n * j + i] += data[k * n + i] * data[j * n + k];
+          // cout << data[k * n + i] << " x " << data[j * n + k] << " = " <<
+          // sqr[n * j + i] << endl;
+        }
+        // cout << endl;
+      }
+    }
+    return sqr;
+  }
+
+  matrix cube() const {
+    matrix sqr(n);
+
+    for (int i = 0; i < n; i++) {
+      for (int j = 0; j < n; j++) {
+        for (int k = 0; k < n; k++) {
+          sqr.data[n * j + i] += data[k * n + i] * data[j * n + k];
+        }
+      }
+    }
+
+    matrix cube(n);
+
+    for (int i = 0; i < n; i++) {
+      for (int j = 0; j < n; j++) {
+        for (int k = 0; k < n; k++) {
+          cube.data[n * j + i] += sqr.data[k * n + i] * data[j * n + k];
+          // cout << sqr[k * n + i] << " x " << data[j * n + k] << " = " <<
+          // cube[n * j + i] << endl;
+        }
+        // cout << endl;
+      }
+    }
+    return cube;
+  }
+
+  friend ostream& operator<<(ostream& os, const matrix& mat) {
+    for (int i = 0; i < mat.n; i++) {
+      for (int j = 0; j < mat.n; j++) {
+        os << mat.data[i * mat.n + j] << " ";
+      }
+      os << endl;
+    }
+    return os;
+  }
+};
+
+int main2() {
+  matrix A;
+  matrix B = A.sqr();
+  matrix C = A.cube();
+
+  cout << A << endl;
+  cout << B << endl;
+  cout << C << endl;
+
+  return 0;
+}
+#define infile "data.dat"
+#define debugging 0
 #define read_from_cin 0
 #define minimum_precision 1e-12
 #include <memory.h>
@@ -182,8 +383,6 @@ bool convert_row_echelon_form(int& n, double*& m, double*& v) {
         answer = answer + reduction_factor * orig_answer;
       }
     }
-    cout << "On iteration " << i << endl;
-    print_both(m, v, n);
   }
   // #if 0
   // Move the 0ed out rows to the end.
@@ -255,18 +454,19 @@ void shuffle(double* m, double* v, int n) {
   v[index_replaced] = v[0];
   v[0] = t;
 }
-int main() {
+int main3() {
   int n;
   double* matrix = nullptr;
   double* answer_vector = nullptr;
   get_input(n, matrix, answer_vector);
+  double* matrix_copy = new double[n * n];
+  double* answer_vector_copy = new double[n];
+  // bool first = false;
+  memcpy(answer_vector_copy, answer_vector, n * sizeof(double));
+  memcpy(matrix_copy, matrix, n * n * sizeof(double));
+
   if (run_checks(n, matrix, answer_vector)) {
     // bool result = false;
-    // double* matrix_copy = new double[n * n];
-    // double* answer_vector_copy = new double[n];
-    // bool first = false;
-    // memcpy(answer_vector_copy, answer_vector, n * sizeof(double));
-    // memcpy(matrix_copy, matrix, n * n * sizeof(double));
     // while (!result) {
     //   if (!first) {
     //     for (int i = 0; i < n * n; i++) shuffle(matrix, answer_vector, n);
@@ -296,4 +496,13 @@ int main() {
   }
   delete[] matrix;
   delete[] answer_vector;
+  main1(matrix_copy, answer_vector_copy, n);
+  delete[] matrix_copy;
+  delete[] answer_vector_copy;
+  return 0;
+}
+int main() {
+  // main1();
+  main2();
+  main3();
 }

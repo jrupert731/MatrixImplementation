@@ -113,8 +113,8 @@ def run_trial_to_disk_if_fail(n=4):
         print(" ".join(sol))
 
 async def main():
-    for i in tqdm(range(10000)):
-        await run_trial(50)
+    for i in tqdm(range(1000)):
+        await run_trial(5)
 loop = asyncio.get_event_loop()
 loop.run_until_complete(main())
 loop.close()
